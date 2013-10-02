@@ -1,0 +1,34 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+<!--
+ -->
+</head>
+<body bgcolor="white">
+
+<h1>JavaPNS 2.1</h1>
+<p>A Java library for interacting with Apple's Push Notification Service.</p>
+
+<h2>Usage</h2>
+<p>The simplest way of pushing notifications with <b>JavaPNS</b> is to use the <code>javapns.Push</code> class:</p>
+<pre><code>
+import javapns.Push;
+        
+public class PushTest {
+ 
+	public static void main(String[] args) {
+	
+		Push.alert("Hello World!", "keystore.p12", "keystore_password", false, "Your token");
+	}
+}
+</code></pre>
+
+For more details about using the library, see the on-line wiki at:
+
+<a href="http://code.google.com/p/javapns/w/list" target="_blank">http://code.google.com/p/javapns/w/list</a>
+
+
+
+
+</body>
+</html>

@@ -101,6 +101,18 @@ public abstract class Payload {
 		logger.debug("Adding custom Dictionary [" + name + "] = (list)");
 		put(name, values, payload, false);
 	}
+	
+	
+	/**
+	 * Add a custom dictionnary with object
+	 * @param name
+	 * @param value
+	 * @throws JSONException
+	 */
+	public void addCustomDictionary(String name, Object value) throws JSONException {
+		logger.debug("Adding custom Dictionary [" + name + "] = [" + value + "]");
+		put(name, value, payload, false);
+	}
 
 
 	/**

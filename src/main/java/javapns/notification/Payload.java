@@ -1,11 +1,12 @@
 package javapns.notification;
 
-import java.util.*;
+import javapns.notification.exceptions.PayloadMaxSizeExceededException;
+import javapns.notification.exceptions.PayloadMaxSizeProbablyExceededException;
+import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
-import javapns.notification.exceptions.*;
-
-import org.apache.log4j.*;
-import org.json.*;
+import java.util.List;
 
 /**
  * Abstract class representing a payload that can be transmitted to Apple.
@@ -279,6 +280,9 @@ public abstract class Payload {
 		else object.put(propertyName, propertyValue);
 	}
 
+	protected Object remove(String propertyName, JSONObject object) {
+		return object.remove(propertyName);
+	}
 
 	/**
 	 * Indicates if payload size is estimated and controlled when adding properties (default is false).

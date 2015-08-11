@@ -1,10 +1,11 @@
 package javapns.notification;
 
-import java.util.*;
+import javapns.notification.exceptions.PayloadAlertAlreadyExistsException;
+import org.json.JSONException;
+import org.json.JSONNull;
+import org.json.JSONObject;
 
-import javapns.notification.exceptions.*;
-
-import org.json.*;
+import java.util.List;
 
 /**
  * A payload compatible with the Apple Push Notification Service.
@@ -335,6 +336,19 @@ public class PushNotificationPayload extends Payload {
 		put("loc-args", args, getOrAddCustomAlert(), false);
 	}
 
+	/**
+	 * Sets the content available.
+	 *
+	 * @param available
+	 * @throws JSONException
+	 */
+	public void setContentAvailable(boolean available) throws JSONException {
+		if (available == true) {
+			put("content-available", 1, this.apsDictionary, false);
+		} else {
+			remove("content-available", this.apsDictionary);
+		}
+	}
 
 	/**
 	 * Return the maximum payload size in bytes.
@@ -352,4 +366,5 @@ public class PushNotificationPayload extends Payload {
 		if (getPreSendConfiguration() != 0) return;
 		if (toString().equals("{\"aps\":{}}")) throw new IllegalArgumentException("Payload cannot be empty");
 	}
+
 }

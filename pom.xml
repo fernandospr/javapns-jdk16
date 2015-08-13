@@ -3,7 +3,7 @@
   	<groupId>com.github.fernandospr</groupId>
   	<artifactId>javapns-jdk16</artifactId>
   	<packaging>jar</packaging>
-  	<version>2.3</version>
+  	<version>2.3.1-SNAPSHOT</version>
   	<name>javapns-jdk16</name>
   	<description>Library to send notifications using APNS</description>
   	<url>https://github.com/fernandospr/javapns-jdk16</url>

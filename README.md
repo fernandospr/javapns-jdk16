@@ -12,8 +12,8 @@ Java1.6 compatible
 Version 2.3 released!
 
 **2.3 Changes**
-* iOS7 bigger notification payload (2KB)
-* Silent push notifications support ("content-available":1)
+* iOS>=8 bigger notification payload support (2KB)
+* iOS>=7 Silent push notifications support ("content-available":1)
 
 ### Installation through Central Maven Repository
 javapns-jdk16 is available on the Central Maven Repository.

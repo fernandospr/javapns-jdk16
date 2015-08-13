@@ -7,6 +7,13 @@ Fork of JavaPNS to include Maven support - http://code.google.com/p/javapns/
 
 Java1.6 compatible
 
+### Updates
+
+Version 2.3 released!
+
+**2.3 Changes**
+* iOS7 bigger notification payload (2KB)
+* Silent push notifications support ("content-available":1)
 
 ### Installation through Central Maven Repository
 javapns-jdk16 is available on the Central Maven Repository.
@@ -15,6 +22,6 @@ To use javapns-jdk16 in your project, please add the following dependency to you
 <dependency>
 	<groupId>com.github.fernandospr</groupId>
 	<artifactId>javapns-jdk16</artifactId>
-	<version>2.2.1</version>
+	<version>2.3</version>
 </dependency>
 ```

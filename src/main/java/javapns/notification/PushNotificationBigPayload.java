@@ -1,5 +1,7 @@
 package javapns.notification;
 
+import org.json.JSONException;
+
 public class PushNotificationBigPayload extends PushNotificationPayload {
 
     /* Maximum total length (serialized) of a payload */
@@ -16,4 +18,19 @@ public class PushNotificationBigPayload extends PushNotificationPayload {
         return MAXIMUM_PAYLOAD_LENGTH;
     }
 
+    public static PushNotificationBigPayload complex() {
+        return new PushNotificationBigPayload();
+    }
+
+    public static PushNotificationBigPayload fromJSON(String rawJSON) throws JSONException {
+        return new PushNotificationBigPayload(rawJSON);
+    }
+
+    public PushNotificationBigPayload() {
+        super();
+    }
+
+    public PushNotificationBigPayload(String rawJSON) throws JSONException {
+        super(rawJSON);
+    }
 }

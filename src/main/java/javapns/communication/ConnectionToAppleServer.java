@@ -26,7 +26,7 @@ public abstract class ConnectionToAppleServer {
 	protected static final Logger logger = Logger.getLogger(ConnectionToAppleServer.class);
 
 	/* The algorithm used by KeyManagerFactory */
-	private static final String ALGORITHM = "sunx509";
+	private static final String ALGORITHM = KeyManagerFactory.getDefaultAlgorithm();
 
 	/* The protocol used to create the SSLSocket */
 	private static final String PROTOCOL = "TLS";

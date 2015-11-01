@@ -9,7 +9,11 @@ Java1.6 compatible
 
 ### Updates
 
-Version 2.3 released!
+Version 2.3.1 released!
+
+**2.3.1 Changes**
+* PushNotificationBigPayload ```complex``` and ```fromJson``` methods fixed
+* Fix to make trust store work on IBM JVM
 
 **2.3 Changes**
 * iOS>=8 bigger notification payload support (2KB)
@@ -22,6 +26,6 @@ To use javapns-jdk16 in your project, please add the following dependency to you
 <dependency>
 	<groupId>com.github.fernandospr</groupId>
 	<artifactId>javapns-jdk16</artifactId>
-	<version>2.3</version>
+	<version>2.3.1</version>
 </dependency>
 ```

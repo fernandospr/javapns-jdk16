@@ -2,7 +2,7 @@
 	<modelVersion>4.0.0</modelVersion>
   	<groupId>com.github.fernandospr</groupId>
   	<artifactId>javapns-jdk16</artifactId>
-  	<packaging>jar</packaging>
+  	<packaging>bundle</packaging>
   	<version>2.3.2-SNAPSHOT</version>
   	<name>javapns-jdk16</name>
   	<description>Library to send notifications using APNS</description>
@@ -53,6 +53,17 @@
 	
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.apache.felix</groupId>
+				<artifactId>maven-bundle-plugin</artifactId>
+				<version>3.0.1</version>
+				<extensions>true</extensions>
+				<configuration>
+					<instructions>
+						<Export-Package>javapns*,org.json</Export-Package>
+					</instructions>
+				</configuration>
+			</plugin>
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<configuration>

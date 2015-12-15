@@ -212,7 +212,9 @@ public class Push {
 			threads.waitForAllThreads(true);
 		} catch (InterruptedException e) {
 		}
-		return threads.getPushedNotifications();
+		PushedNotifications notifications = threads.getPushedNotifications();
+		threads.destroy();
+		return notifications;
 	}
 
 
@@ -273,7 +275,9 @@ public class Push {
 			threads.waitForAllThreads(true);
 		} catch (InterruptedException e) {
 		}
-		return threads.getPushedNotifications();
+		PushedNotifications notifications = threads.getPushedNotifications();
+		threads.destroy();
+		return notifications;
 	}
 
 

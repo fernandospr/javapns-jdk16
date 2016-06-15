@@ -6,6 +6,7 @@ import javapns.communication.exceptions.*;
 import javapns.devices.*;
 import javapns.devices.exceptions.*;
 import javapns.notification.*;
+import org.apache.log4j.Logger;
 
 /**
  * <h1>Pushes payloads asynchroneously using a dedicated thread.</h1>
@@ -28,6 +29,7 @@ import javapns.notification.*;
  * @author Sylvain Pedneault
  */
 public class NotificationThread implements Runnable, PushQueue {
+    static final Logger logger = Logger.getLogger(NotificationThread.class);
 
 	/**
 	 * Working modes supported by Notification Threads.
@@ -72,6 +74,7 @@ public class NotificationThread implements Runnable, PushQueue {
 	private List<PayloadPerDevice> messages = new Vector<PayloadPerDevice>();
 
 	private Exception exception;
+    private final Object queueModeWaitPoint = new Object();
 
 
 	/**
@@ -265,10 +268,12 @@ public class NotificationThread implements Runnable, PushQueue {
 					int messageId = newMessageIdentifier();
 					PushedNotification notification = notificationManager.sendNotification(message.getDevice(), message.getPayload(), false, messageId);
 					notifications.add(notification);
-					try {
-						if (sleepBetweenNotifications > 0) Thread.sleep(sleepBetweenNotifications);
-					} catch (InterruptedException e) {
-					}
+                    if (sleepBetweenNotifications > 0) {
+                        try {
+                            Thread.sleep(sleepBetweenNotifications);
+                        } catch (InterruptedException e) {
+                        }
+                    }
 					if (notificationsPushed != 0 && notificationsPushed % maxNotificationsPerConnection == 0) {
 						if (listener != null) listener.eventConnectionRestarted(this);
 						notificationManager.restartConnection(server);
@@ -276,8 +281,19 @@ public class NotificationThread implements Runnable, PushQueue {
 					busy = false;
 				}
 				try {
-					Thread.sleep(10 * 1000);
-				} catch (Exception e) {
+                    // FIX : available stop thread and thread sleep -> wait thread
+//					Thread.sleep(10 * 1000);
+                    synchronized (queueModeWaitPoint) {
+                        if (logger.isDebugEnabled()) {
+                            logger.debug("thread #" + this.threadNumber + " wait message");
+                        }
+                        queueModeWaitPoint.wait();
+                    }
+				} catch (InterruptedException e) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("thread #" + this.threadNumber + " interrupted.");
+                    }
+                    break;
 				}
 			}
 			notificationManager.stopConnection();
@@ -308,7 +324,10 @@ public class NotificationThread implements Runnable, PushQueue {
 		if (mode != MODE.QUEUE) return this;
 		try {
 			messages.add(message);
-			this.thread.interrupt();
+//			this.thread.interrupt();
+            synchronized (queueModeWaitPoint) {
+                queueModeWaitPoint.notifyAll();
+            }
 		} catch (Exception e) {
 		}
 		return this;

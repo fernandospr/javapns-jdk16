@@ -29,22 +29,22 @@ import org.apache.log4j.Logger;
  * @author Sylvain Pedneault
  */
 public class NotificationThread implements Runnable, PushQueue {
-    static final Logger logger = Logger.getLogger(NotificationThread.class);
+	static final Logger logger = Logger.getLogger(NotificationThread.class);
 
 	/**
 	 * Working modes supported by Notification Threads.
 	 */
 	public static enum MODE {
 		/**
-		 * In LIST mode, the thread is given a predefined list of devices and pushes all notifications as soon as it is started.  
+		 * In LIST mode, the thread is given a predefined list of devices and pushes all notifications as soon as it is started.
 		 * Its work is complete, the connection is closed and the thread ends as soon as all notifications have been sent.
 		 * This mode is appropriate when you have a large amount of notifications to send in one batch.
 		 */
 		LIST,
 
 		/**
-		 * In QUEUE mode, the thread is started with an open connection and no notification to send, and waits for notifications to be queued.  
-		 * It opens a connection and waits for messages to be added to its queue using a queue(..) method.  
+		 * In QUEUE mode, the thread is started with an open connection and no notification to send, and waits for notifications to be queued.
+		 * It opens a connection and waits for messages to be added to its queue using a queue(..) method.
 		 * This mode is appropriate when you need to periodically send random individual notifications and you do not wish to open and close connections to Apple all the time (which is something Apple warns against in their documentation).
 		 * Unless your software is constantly generating large amounts of random notifications and that you absolutely need to stream them over multiple threaded connections, you should not need to create more than one NotificationThread in QUEUE mode.
 		 */
@@ -74,13 +74,13 @@ public class NotificationThread implements Runnable, PushQueue {
 	private List<PayloadPerDevice> messages = new Vector<PayloadPerDevice>();
 
 	private Exception exception;
-    private final Object queueModeWaitPoint = new Object();
+	private final Object queueModeWaitPoint = new Object();
 
 
 	/**
 	 * Create a grouped thread in LIST mode for pushing a single payload to a list of devices
 	 * and coordinating with a parent NotificationThreads object.
-	 * 
+	 *
 	 * @param threads the parent NotificationThreads object that is coordinating multiple threads
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
@@ -100,7 +100,7 @@ public class NotificationThread implements Runnable, PushQueue {
 	/**
 	 * Create a grouped thread in LIST mode for pushing individual payloads to a list of devices
 	 * and coordinating with a parent NotificationThreads object.
-	 * 
+	 *
 	 * @param threads the parent NotificationThreads object that is coordinating multiple threads
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
@@ -117,7 +117,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Create a standalone thread in LIST mode for pushing a single payload to a list of devices.
-	 * 
+	 *
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
 	 * @param payload a payload to push
@@ -130,7 +130,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Create a standalone thread in LIST mode for pushing individual payloads to a list of devices.
-	 * 
+	 *
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
 	 * @param messages a list or an array of PayloadPerDevice: {@link java.util.List}<{@link javapns.notification.PayloadPerDevice}>, {@link javapns.notification.PayloadPerDevice PayloadPerDevice[]} or {@link javapns.notification.PayloadPerDevice}
@@ -142,7 +142,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Create a grouped thread in QUEUE mode, awaiting messages to push.
-	 * 
+	 *
 	 * @param threads the parent NotificationThreads object that is coordinating multiple threads
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
@@ -158,7 +158,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Create a standalone thread in QUEUE mode, awaiting messages to push.
-	 * 
+	 *
 	 * @param notificationManager the notification manager to use
 	 * @param server the server to communicate with
 	 */
@@ -169,7 +169,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Create a standalone thread in QUEUE mode, awaiting messages to push.
-	 * 
+	 *
 	 * @param server the server to communicate with
 	 */
 	public NotificationThread(AppleNotificationServer server) {
@@ -179,7 +179,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Start the transmission thread.
-	 * 
+	 *
 	 * This method returns immediately, as the thread starts working on its own.
 	 */
 	public synchronized NotificationThread start() {
@@ -268,12 +268,12 @@ public class NotificationThread implements Runnable, PushQueue {
 					int messageId = newMessageIdentifier();
 					PushedNotification notification = notificationManager.sendNotification(message.getDevice(), message.getPayload(), false, messageId);
 					notifications.add(notification);
-                    if (sleepBetweenNotifications > 0) {
-                        try {
-                            Thread.sleep(sleepBetweenNotifications);
-                        } catch (InterruptedException e) {
-                        }
-                    }
+					if (sleepBetweenNotifications > 0) {
+						try {
+							Thread.sleep(sleepBetweenNotifications);
+						} catch (InterruptedException e) {
+						}
+					}
 					if (notificationsPushed != 0 && notificationsPushed % maxNotificationsPerConnection == 0) {
 						if (listener != null) listener.eventConnectionRestarted(this);
 						notificationManager.restartConnection(server);
@@ -281,21 +281,22 @@ public class NotificationThread implements Runnable, PushQueue {
 					busy = false;
 				}
 				try {
-                    // FIX : available stop thread and thread sleep -> wait thread
+					// FIX : available stop thread and thread sleep -> wait thread
 //					Thread.sleep(10 * 1000);
-                    synchronized (queueModeWaitPoint) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("thread #" + this.threadNumber + " wait message");
-                        }
-                        queueModeWaitPoint.wait();
-                    }
+					synchronized (queueModeWaitPoint) {
+						if (logger.isDebugEnabled()) {
+							logger.debug("thread #" + this.threadNumber + " wait message");
+						}
+						queueModeWaitPoint.wait(10 * 1000);
+					}
 				} catch (InterruptedException e) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("thread #" + this.threadNumber + " interrupted.");
-                    }
-                    break;
+					if (logger.isDebugEnabled()) {
+						logger.debug("thread #" + this.threadNumber + " interrupted.");
+					}
+					break;
 				}
 			}
+
 			notificationManager.stopConnection();
 		} catch (KeystoreException e) {
 			this.exception = e;
@@ -325,9 +326,9 @@ public class NotificationThread implements Runnable, PushQueue {
 		try {
 			messages.add(message);
 //			this.thread.interrupt();
-            synchronized (queueModeWaitPoint) {
-                queueModeWaitPoint.notifyAll();
-            }
+			synchronized (queueModeWaitPoint) {
+				queueModeWaitPoint.notifyAll();
+			}
 		} catch (Exception e) {
 		}
 		return this;
@@ -338,9 +339,9 @@ public class NotificationThread implements Runnable, PushQueue {
 	 * Set a maximum number of notifications that should be streamed over a continuous connection
 	 * to an Apple server.  When that maximum is reached, the thread automatically closes and
 	 * reopens a fresh new connection to the server and continues streaming notifications.
-	 * 
+	 *
 	 * Default is 200 (recommended).
-	 * 
+	 *
 	 * @param maxNotificationsPerConnection
 	 */
 	public void setMaxNotificationsPerConnection(int maxNotificationsPerConnection) {
@@ -357,9 +358,9 @@ public class NotificationThread implements Runnable, PushQueue {
 	 * Set a delay the thread should sleep between each notification.
 	 * This is sometimes useful when communication with Apple servers is
 	 * unreliable and notifications are streaming too fast.
-	 * 
+	 *
 	 * Default is 0.
-	 * 
+	 *
 	 * @param milliseconds
 	 */
 	public void setSleepBetweenNotifications(long milliseconds) {
@@ -379,7 +380,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Get the list of devices associated with this thread.
-	 * 
+	 *
 	 * @return a list of devices
 	 */
 	public List<Device> getDevices() {
@@ -389,7 +390,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Get the number of devices that this thread pushes to.
-	 * 
+	 *
 	 * @return the number of devices registered with this thread
 	 */
 	public int size() {
@@ -399,7 +400,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Provide an event listener which will be notified of this thread's progress.
-	 * 
+	 *
 	 * @param listener any object implementing the NotificationProgressListener interface
 	 */
 	public void setListener(NotificationProgressListener listener) {
@@ -413,9 +414,9 @@ public class NotificationThread implements Runnable, PushQueue {
 
 
 	/**
-	 * Set the thread number so that generated message identifiers can be made 
+	 * Set the thread number so that generated message identifiers can be made
 	 * unique across all threads.
-	 * 
+	 *
 	 * @param threadNumber
 	 */
 	protected void setThreadNumber(int threadNumber) {
@@ -425,7 +426,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Return the thread number assigned by the parent NotificationThreads object, if any.
-	 * 
+	 *
 	 * @return the unique number assigned to this thread by the parent group
 	 */
 	public int getThreadNumber() {
@@ -435,7 +436,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Return a new sequential message identifier.
-	 * 
+	 *
 	 * @return a message identifier unique to all NotificationThread objects
 	 */
 	public int newMessageIdentifier() {
@@ -445,7 +446,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Returns the first message identifier generated by this thread.
-	 * 
+	 *
 	 * @return a message identifier unique to all NotificationThread objects
 	 */
 	public int getFirstMessageIdentifier() {
@@ -455,7 +456,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Returns the last message identifier generated by this thread.
-	 * 
+	 *
 	 * @return a message identifier unique to all NotificationThread objects
 	 */
 	public int getLastMessageIdentifier() {
@@ -465,7 +466,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Returns list of all notifications pushed by this thread (successful or not).
-	 * 
+	 *
 	 * @return a list of pushed notifications
 	 */
 	public PushedNotifications getPushedNotifications() {
@@ -484,7 +485,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Returns list of all notifications that this thread attempted to push but that failed.
-	 * 
+	 *
 	 * @return a list of failed notifications
 	 */
 	public PushedNotifications getFailedNotifications() {
@@ -494,7 +495,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Returns list of all notifications that this thread attempted to push and succeeded.
-	 * 
+	 *
 	 * @return a list of failed notifications
 	 */
 	public PushedNotifications getSuccessfulNotifications() {
@@ -513,7 +514,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Get the messages associated with this thread, if any.
-	 * 
+	 *
 	 * @return messages
 	 */
 	public List<PayloadPerDevice> getMessages() {
@@ -541,7 +542,7 @@ public class NotificationThread implements Runnable, PushQueue {
 
 	/**
 	 * Wrap a critical exception (if any occurred) into a List to satisfy the NotificationQueue interface contract.
-	 * 
+	 *
 	 * @return a list containing a critical exception, if any occurred
 	 */
 	public List<Exception> getCriticalExceptions() {

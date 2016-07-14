@@ -268,11 +268,9 @@ public class NotificationThread implements Runnable, PushQueue {
 					int messageId = newMessageIdentifier();
 					PushedNotification notification = notificationManager.sendNotification(message.getDevice(), message.getPayload(), false, messageId);
 					notifications.add(notification);
-					if (sleepBetweenNotifications > 0) {
-						try {
-							Thread.sleep(sleepBetweenNotifications);
-						} catch (InterruptedException e) {
-						}
+					try {
+						if (sleepBetweenNotifications > 0) Thread.sleep(sleepBetweenNotifications);
+					} catch (InterruptedException e) {
 					}
 					if (notificationsPushed != 0 && notificationsPushed % maxNotificationsPerConnection == 0) {
 						if (listener != null) listener.eventConnectionRestarted(this);
@@ -281,8 +279,6 @@ public class NotificationThread implements Runnable, PushQueue {
 					busy = false;
 				}
 				try {
-					// FIX : available stop thread and thread sleep -> wait thread
-//					Thread.sleep(10 * 1000);
 					synchronized (queueModeWaitPoint) {
 						if (logger.isDebugEnabled()) {
 							logger.debug("thread #" + this.threadNumber + " wait message");
@@ -296,7 +292,6 @@ public class NotificationThread implements Runnable, PushQueue {
 					break;
 				}
 			}
-
 			notificationManager.stopConnection();
 		} catch (KeystoreException e) {
 			this.exception = e;
@@ -325,7 +320,6 @@ public class NotificationThread implements Runnable, PushQueue {
 		if (mode != MODE.QUEUE) return this;
 		try {
 			messages.add(message);
-//			this.thread.interrupt();
 			synchronized (queueModeWaitPoint) {
 				queueModeWaitPoint.notifyAll();
 			}

@@ -351,6 +351,17 @@ public class PushNotificationPayload extends Payload {
 	}
 
 	/**
+	 * Add a category.
+	 *
+	 * @param category the category of a message
+	 * @throws JSONException
+	 */
+	public void addCategory(String category) throws JSONException {
+		logger.debug("Adding category [" + category + "]");
+		put("category", category, this.apsDictionary, true);
+	}
+
+	/**
 	 * Return the maximum payload size in bytes.
 	 * For APNS payloads, this method returns 256.
 	 * 

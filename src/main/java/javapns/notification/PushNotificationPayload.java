@@ -222,8 +222,6 @@ public class PushNotificationPayload extends Payload {
 	}
 
 
-
-
 	/**
 	 * Get the custom alert object, creating it if it does not yet exist.
 	 * 
@@ -294,6 +292,11 @@ public class PushNotificationPayload extends Payload {
 	}
 
 
+	public void addCustomAlertTitle(String title) throws JSONException {
+		put("title", title, getOrAddCustomAlert(), false);
+	}
+
+
 	/**
 	 * Create a custom alert (if none exist) and add a body to the custom alert.
 	 * 
@@ -302,6 +305,41 @@ public class PushNotificationPayload extends Payload {
 	 */
 	public void addCustomAlertBody(String body) throws JSONException {
 		put("body", body, getOrAddCustomAlert(), false);
+	}
+
+
+	/**
+	 * Create a custom alert (if none exist) and add a custom subtitle.
+	 *
+	 * @param subtitle the subtitle of the alert
+	 * @throws JSONException
+	 */
+	public void addCustomAlertSubtitle(String subtitle) throws JSONException {
+		put("subtitle", subtitle, getOrAddCustomAlert(), false);
+	}
+
+
+	/**
+	 * Create a custom alert (if none exist) and add a title-loc-key parameter.
+	 *
+	 * @param titleLocKey
+	 * @throws JSONException
+	 */
+	public void addCustomAlertTitleLocKey(String titleLocKey) throws JSONException {
+		Object value = titleLocKey != null ? titleLocKey : new JSONNull();
+		put("title-loc-key", titleLocKey, getOrAddCustomAlert(), false);
+	}
+
+
+	/**
+	 * Create a custom alert (if none exist) and add sub-parameters for the title-loc-key parameter.
+	 *
+	 * @param args
+	 * @throws JSONException
+	 */
+	public void addCustomAlertTitleLocArgs(List args) throws JSONException {
+		Object value = args != null && !args.isEmpty() ? args: new JSONNull();
+		put("title-loc-args", value, getOrAddCustomAlert(), false);
 	}
 
 
@@ -337,6 +375,18 @@ public class PushNotificationPayload extends Payload {
 	public void addCustomAlertLocArgs(List args) throws JSONException {
 		put("loc-args", args, getOrAddCustomAlert(), false);
 	}
+
+
+	/**
+	 * Create a custom alert (if none exist) and add a launch image.
+	 *
+	 * @param launchImage the subtitle of the alert
+	 * @throws JSONException
+	 */
+	public void addCustomAlertLaunchImage(String launchImage) throws JSONException {
+		put("launch-image", launchImage, getOrAddCustomAlert(), false);
+	}
+
 
 	/**
 	 * Sets the content available.

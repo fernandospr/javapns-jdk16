@@ -46,7 +46,7 @@ You should code the following:
 ```
 PushNotificationBigPayload payload = PushNotificationBigPayload.complex();
 payload.addAlert("Message received from Bob");
-payload.addCustomDictionary("acme2", Arrays.asList("bang, "whiz"));
+payload.addCustomDictionary("acme2", Arrays.asList("bang", "whiz"));
 ```
 
 #### Example 2
@@ -55,6 +55,7 @@ To send the following payload:
 {
     "aps" : {
         "alert" : {
+            "title" : "Game Request",
             "body" : "Bob wants to play poker",
             "action-loc-key" : "PLAY"
         },
@@ -67,11 +68,12 @@ To send the following payload:
 You should code the following:
 ```
 PushNotificationBigPayload payload = PushNotificationBigPayload.complex();
+payload.addCustomAlertTitle("Game Request");
 payload.addCustomAlertBody("Bob wants to play poker");
 payload.addCustomAlertActionLocKey("PLAY");
 payload.addBadge(5);
 payload.addCustomDictionary("acme1", "bar");
-payload.addCustomDictionary("acme2", Arrays.asList("bang, "whiz"));
+payload.addCustomDictionary("acme2", Arrays.asList("bang", "whiz"));
 ```
 
 #### Example 3
@@ -136,4 +138,30 @@ You should code the following:
 PushNotificationBigPayload payload = PushNotificationBigPayload.complex();
 payload.setContentAvailable(true);
 payload.addCustomDictionary("acme", "foo");
+```
+
+
+#### Example 6
+To send the following payload:
+```
+{
+  "aps": {
+    "mutable-content":1,
+    "alert":{
+      "title": "Notification title",
+      "subtitle": "Notification subtitle",
+      "body": "Notification body"
+    }
+  },
+  "media-attachment": "https://url/to/content.mpg"
+}
+```
+You should code the following:
+```
+PushNotificationBigPayload payload = PushNotificationBigPayload.complex();
+payload.addCustomAlertTitle("Notification title");
+payload.addCustomAlertSubtitle("Notification subtitle");
+payload.addCustomAlertBody("Notification body");
+payload.setMutableContent(true);
+payload.addCustomDictionary("media-attachment", "https://url/to/content.mpg");
 ```

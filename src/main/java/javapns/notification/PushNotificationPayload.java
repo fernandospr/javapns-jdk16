@@ -222,6 +222,8 @@ public class PushNotificationPayload extends Payload {
 	}
 
 
+
+
 	/**
 	 * Get the custom alert object, creating it if it does not yet exist.
 	 * 
@@ -344,8 +346,10 @@ public class PushNotificationPayload extends Payload {
 	 */
 	public void setContentAvailable(boolean available) throws JSONException {
 		if (available == true) {
+			logger.debug("Setting content available");
 			put("content-available", 1, this.apsDictionary, false);
 		} else {
+			logger.debug("Removing content available");
 			remove("content-available", this.apsDictionary);
 		}
 	}
@@ -359,6 +363,22 @@ public class PushNotificationPayload extends Payload {
 	public void addCategory(String category) throws JSONException {
 		logger.debug("Adding category [" + category + "]");
 		put("category", category, this.apsDictionary, true);
+	}
+
+	/**
+	 * Sets the mutable content.
+	 *
+	 * @param mutable
+	 * @throws JSONException
+	 */
+	public void setMutableContent(boolean mutable) throws JSONException {
+		if (mutable == true) {
+			logger.debug("Setting mutable content");
+			put("mutable-content", 1, this.apsDictionary, false);
+		} else {
+			logger.debug("Removing mutable content");
+			remove("mutable-content", this.apsDictionary);
+		}
 	}
 
 	/**

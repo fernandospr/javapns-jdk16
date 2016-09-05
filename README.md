@@ -9,7 +9,13 @@ Java1.6 compatible
 
 ## Updates
 
-Version 2.3.1 released!
+Version 2.4.0 released!
+
+**2.4.0 Changes**
+* Added support for the following fields:
+ * category
+ * mutable-content (iOS>=10)
+ * title, subtitle (iOS>=10), title-loc-key, title-loc-args and launch-image
 
 **2.3.1 Changes**
 * PushNotificationBigPayload ```complex``` and ```fromJson``` methods fixed
@@ -26,11 +32,24 @@ To use javapns-jdk16 in your project, please add the following dependency to you
 <dependency>
 	<groupId>com.github.fernandospr</groupId>
 	<artifactId>javapns-jdk16</artifactId>
-	<version>2.3.1</version>
+	<version>2.4.0</version>
 </dependency>
 ```
 
-## Usage examples
+## Usage 
+
+You need to first construct the push notification payload.
+```
+PushNotificationBigPayload payload = ... // See Payload examples below
+```
+
+Then send it:
+```
+Push.payload(payload, p12File, password, isProduction, deviceTokens);
+```
+
+
+## Payload examples
 
 Based on <a href="https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/TheNotificationPayload.html#//apple_ref/doc/uid/TP40008194-CH107-SW1">Apple docs</a> 
 
@@ -159,9 +178,10 @@ To send the following payload:
 You should code the following:
 ```
 PushNotificationBigPayload payload = PushNotificationBigPayload.complex();
+payload.setMutableContent(true);
 payload.addCustomAlertTitle("Notification title");
 payload.addCustomAlertSubtitle("Notification subtitle");
 payload.addCustomAlertBody("Notification body");
-payload.setMutableContent(true);
 payload.addCustomDictionary("media-attachment", "https://url/to/content.mpg");
 ```
+

@@ -77,7 +77,7 @@ class ResponsePacketReader {
 	}
 
 
-	private static ResponsePacket readResponsePacketData(InputStream input) throws IOException {
+	public static ResponsePacket readResponsePacketData(InputStream input) throws IOException {
 		int command = input.read();
 		if (command < 0) return null;
 		int status = input.read();

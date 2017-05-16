@@ -61,7 +61,7 @@ public class PushNotificationManager {
 	private Vector<ResponsePacket> errorPacketList = new Vector<ResponsePacket>();
 	private Thread monitorThread = null;
 	private ResponseMonitor monitorRunnable = null;
-	private Vector<String> badtokens = new Vector<String>();
+	private Vector<String> invalidTokens = new Vector<String>();
 
 	private int nextMessageIdentifier = 1;
 
@@ -206,8 +206,8 @@ public class PushNotificationManager {
 	 * A method to get the invalid tokens that we registered.
 	 * @return A vector of invalid tokens
 	 */
-	public Vector<String> getBadtokens() {
-		return badtokens;
+	public Vector<String> getInvalidTokens() {
+		return invalidTokens;
 	}
 
 	public void stopMonitoringResponse () {
@@ -498,7 +498,7 @@ public class PushNotificationManager {
 	 */
 	private void sendNotificationQueue(PushedNotification notification, boolean restartConnection) throws CommunicationException {
 		try {
-			// remove first 100 (these should have either been handled by the error handling already)
+			// remove first 100 (these should have either been handled by the error handling already or if no errors should be cleared for memory)
 			if (pushedNotifications.size() > 200) {
 				int counter = 0;
 				for (Iterator<Entry<Integer, PushedNotification>> it = pushedNotifications.entrySet().iterator(); counter < 100;) {
@@ -526,7 +526,7 @@ public class PushNotificationManager {
 							it.remove();
 							// add token to blacklist.
 							if (noti.getResponse() != null && noti.getResponse().getStatus() == 8) {
-								badtokens.add(noti.getDevice().getToken());
+								invalidTokens.add(noti.getDevice().getToken());
 								logger.debug("bad token added to vector: " + noti.getDevice().getToken());
 							}
 						} else if (!foundFirstFail) {
@@ -534,7 +534,7 @@ public class PushNotificationManager {
 							it.remove();
 						} else if (foundFirstFail) {
 							// has to be resend (after the error package)
-							if (badtokens.contains(noti.getDevice().getToken())) {
+							if (invalidTokens.contains(noti.getDevice().getToken())) {
 								// skip if device token is already blacklisted
 								pushedNotifications.remove(noti.getIdentifier());
 								continue;
@@ -572,7 +572,7 @@ public class PushNotificationManager {
 			}
 
 			// Skip sending to ios and breaking the socket when token is blacklisted.
-			if (badtokens.contains(notification.getDevice().getToken())) {
+			if (invalidTokens.contains(notification.getDevice().getToken())) {
 				logger.debug("push with bad token skipped: " + notification.getDevice().getToken());
 				notification.setException(new Exception("invalid token"));
 				return;

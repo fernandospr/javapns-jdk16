@@ -57,6 +57,10 @@ public class PushNotificationManager {
 
 	/* Default retry attempts */
 	private int retryAttempts = DEFAULT_RETRIES;
+	private Vector<ResponsePacket> errorPacketList = new Vector<ResponsePacket>();
+	private Thread monitorThread = null;
+	private ResponseMonitor monitorRunnable = null;
+	private Vector<String> badtokens = new Vector<String>();
 
 	private int nextMessageIdentifier = 1;
 
@@ -148,6 +152,68 @@ public class PushNotificationManager {
 			buf.append(e);
 		}
 		return buf.toString();
+	}
+
+	/**
+	 * Monitors the active socket in realtime, apple closes the socket when they find invalid token or error and discard everything after it.
+	 * We now catch the error response before they close the socket and register the error.
+	 */
+	public void monitorResponseFromSocket() {
+		monitorRunnable = new ResponseMonitor();
+		monitorThread = new Thread(monitorRunnable);
+		monitorThread.start();
+	}
+
+	/**
+	 * Runnable that the listening thread runs to sniff for error responses
+	 * Added a stop method and a volatile boolean to safely close this socket
+	 */
+	public class ResponseMonitor implements Runnable {
+
+		private volatile boolean running = true;
+
+		public void run() {
+			while (running) {
+				try {
+					InputStream is = socket.getInputStream();
+					ResponsePacket packet = ResponsePacketReader.readResponsePacketData(is);
+					if (packet != null && packet.isErrorResponsePacket()) {
+						logger.debug("bad response packet found: " + packet.getMessage());
+						errorPacketList.add(packet);
+					}
+				} catch (IOException e) {
+				}
+
+				try {
+					Thread.sleep(100);
+				} catch (InterruptedException e) {
+				}
+			}
+			logger.debug("Monitoring thread safely stopped");
+		}
+
+		public void stop() {
+			running = false;
+			try {
+				socket.close();
+			} catch (IOException e) {
+			}
+		}
+	}
+
+	/**
+	 * A method to get the invalid tokens that we registered.
+	 * @return A vector of invalid tokens
+	 */
+	public Vector<String> getBadtokens() {
+		return badtokens;
+	}
+
+	public void stopMonitoringResponse () {
+		monitorRunnable.stop();
+		logger.debug("Monitoring runnable volatile stop boolean set to stop");
+		monitorThread.interrupt();
+		logger.debug("Monitor Thread interrupt triggered");
 	}
 
 
@@ -790,7 +856,7 @@ public class PushNotificationManager {
 
 		/* Device token (shortened), Identifier and expiry */
 		int l = useEnhancedNotificationFormat ? 4 : 8;
-		alert.append("" + deviceToken.substring(0, l) + "É" + deviceToken.substring(64 - l, 64) + (useEnhancedNotificationFormat ? " [Id:" + identifier + "] " + (payload.getExpiry() <= 0 ? "No-store" : "Exp:T+" + payload.getExpiry()) : "") + "\n");
+		alert.append("" + deviceToken.substring(0, l) + "ï¿½" + deviceToken.substring(64 - l, 64) + (useEnhancedNotificationFormat ? " [Id:" + identifier + "] " + (payload.getExpiry() <= 0 ? "No-store" : "Exp:T+" + payload.getExpiry()) : "") + "\n");
 
 		/* Format & encoding */
 		alert.append((useEnhancedNotificationFormat ? "Enhanced" : "Simple") + " format / " + payload.getCharacterEncoding() + "" + "");

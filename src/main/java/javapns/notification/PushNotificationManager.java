@@ -6,6 +6,7 @@ import java.nio.*;
 import java.security.cert.Certificate;
 import java.text.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 import javapns.communication.*;
 import javapns.communication.exceptions.*;
@@ -415,6 +416,240 @@ public class PushNotificationManager {
 		PushedNotification pushedNotification = new PushedNotification(device, payload, identifier);
 		sendNotification(pushedNotification, closeAfter);
 		return pushedNotification;
+	}
+
+	/**
+	 * Send notification using the queue implementation
+	 * 
+	 * @param device the device to be notified
+	 * @param payload the payload to send
+	 * @param closeAfter indicates if the connection should be closed after the payload has been sent
+	 * @param identifier a unique identifier which will match any error reported later (if any)
+	 * @return a pushed notification with details on transmission result and error (if any)
+	 * @throws CommunicationException thrown if a communication error occurs
+	 */
+	public PushedNotification sendNotificationThroughQueue(Device device, Payload payload, int identifier) throws CommunicationException {
+		PushedNotification pushedNotification = new PushedNotification(device, payload, identifier);
+		sendNotificationQueue(pushedNotification, false);
+		return pushedNotification;
+	}
+
+	/**
+	 * Restarting the connection for the queue implementation when reached max notifications per connection.
+	 * 
+	 * @throws CommunicationException thrown if a communication error occurs
+	 */
+	public void restartConnection() throws CommunicationException {
+		try {
+			sendNotificationQueue(null, true);
+		} catch (CommunicationException e) {
+			logger.error("error during restarting socket: " + e.getMessage());
+			throw e;
+		}
+	}
+
+	/**
+	 * When queue is idle try to flush any errors that still remain
+	 * 
+	 * @throws CommunicationException thrown if a communication error occurs
+	 */
+	public void flushErrors() throws CommunicationException {
+		try {
+			sendNotificationQueue(null, false);
+		} catch (CommunicationException e) {
+			logger.error("error during flushing errors: " + e.getMessage());
+			throw e;
+		}
+	}
+
+	/**
+	 * Restart the socket
+	 * 
+	 * @throws KeystoreException thrown if an error occurs with the keystore
+	 * @throws CommunicationException thrown if a communication error occurs
+	 * @throws SocketException thrown if trying to set timeout on a closed socket
+	 */
+	private void restartSocket() throws KeystoreException, CommunicationException, SocketException {
+		try {
+			socket.close();
+		} catch (Exception e2) {
+			// do nothing
+		}
+		int socketTimeout = getSslSocketTimeout();
+		try {
+			socket = connectionToAppleServer.getSSLSocket();
+			socket.setSoTimeout(socketTimeout);
+		} catch (KeystoreException e1) {
+			throw e1;
+		} catch (CommunicationException e2) {
+			throw e2;
+		} catch (SocketException e3) {
+			throw e3;
+		}
+	}
+
+	/**
+	 * The actual send method for the queue implementation. It clears the pushedNotification list when there's 200 in it and reduces it to 100. 
+	 * This is due to the fact that it gives the list time to get a response / handle errors on the later entries (async socket responses)
+	 * 
+	 * @param notification
+	 * @param restartConnection
+	 * @throws CommunicationException
+	 */
+	private void sendNotificationQueue(PushedNotification notification, boolean restartConnection) throws CommunicationException {
+		try {
+			// remove first 100 (these should have either been handled by the error handling already)
+			if (pushedNotifications.size() > 200) {
+				int counter = 0;
+				for (Iterator<Entry<Integer, PushedNotification>> it = pushedNotifications.entrySet().iterator(); counter < 100;) {
+					it.next();
+					it.remove();
+					counter++;
+				}
+			}
+			while(!errorPacketList.isEmpty()) {
+				try {
+					ResponsePacket errorPacket = errorPacketList.get(0);
+					errorPacketList.remove(0);
+					errorPacket.linkToPushedNotification(this);
+
+					restartSocket();
+
+					boolean foundFirstFail = false;
+
+					for (Iterator<Entry<Integer, PushedNotification>> it = pushedNotifications.entrySet().iterator(); it.hasNext();) {
+						Entry<Integer, PushedNotification> entry = it.next();
+						PushedNotification noti = entry.getValue();
+						if (noti.getIdentifier() == errorPacket.getIdentifier()) {
+							// the bad package
+							foundFirstFail = true;
+							it.remove();
+							// add token to blacklist.
+							if (noti.getResponse() != null && noti.getResponse().getStatus() == 8) {
+								badtokens.add(noti.getDevice().getToken());
+								logger.debug("bad token added to vector: " + noti.getDevice().getToken());
+							}
+						} else if (!foundFirstFail) {
+							// successfully sent
+							it.remove();
+						} else if (foundFirstFail) {
+							// has to be resend (after the error package)
+							if (badtokens.contains(noti.getDevice().getToken())) {
+								// skip if device token is already blacklisted
+								pushedNotifications.remove(noti.getIdentifier());
+								continue;
+							}
+							//sanity check, incase we get a response on a later entry when we already have a response on an earlier one.
+							if (noti.getResponse() != null && noti.getResponse().getStatus() == 8) {
+								pushedNotifications.remove(noti.getIdentifier());
+								continue;
+							}
+							try {
+								byte[] bytes = getMessage(noti.getDevice().getToken(), noti.getPayload(), noti.getIdentifier(), noti);
+								this.socket.getOutputStream().write(bytes);
+								noti.setTransmissionCompleted(true);
+								this.socket.getOutputStream().flush();
+							} catch (Exception e) {
+								logger.error("Socket busted during a resend: " + e);
+								restartSocket();
+							}
+						}
+					}
+				} catch (Exception e){
+					logger.error("Exception during handling error pushnotifications: " + e);
+					throw e;
+				}
+			}
+
+			if(restartConnection) {
+				restartSocket();
+				return;
+			}
+
+			// Used to identify flushing the errorlist when queue is idle.
+			if (notification == null) {
+				return;
+			}
+
+			// Skip sending to ios and breaking the socket when token is blacklisted.
+			if (badtokens.contains(notification.getDevice().getToken())) {
+				logger.debug("push with bad token skipped: " + notification.getDevice().getToken());
+				notification.setException(new Exception("invalid token"));
+				return;
+			}
+
+			Device device = notification.getDevice();
+			Payload payload = notification.getPayload();
+			try {
+				payload.verifyPayloadIsNotEmpty();
+			} catch (IllegalArgumentException e) {
+				throw new PayloadIsEmptyException();
+			} catch (Exception e) {
+			}
+
+			if (notification.getIdentifier() <= 0) notification.setIdentifier(newMessageIdentifier());
+			if (!pushedNotifications.containsKey(notification.getIdentifier())) pushedNotifications.put(notification.getIdentifier(), notification);
+			int identifier = notification.getIdentifier();
+
+			String token = device.getToken();
+			// even though the BasicDevice constructor validates the token, we revalidate it in case we were passed another implementation of Device
+			BasicDevice.validateTokenFormat(token);
+			//		PushedNotification pushedNotification = new PushedNotification(device, payload);
+			byte[] bytes = getMessage(token, payload, identifier, notification);
+			//		pushedNotifications.put(pushedNotification.getIdentifier(), pushedNotification);
+
+			/* Special simulation mode to skip actual streaming of message */
+			boolean simulationMode = payload.getExpiry() == 919191;
+
+			notification.setTransmissionAttempts(0);
+			// Keep trying until we have a success
+			boolean success = false;
+			while (!success) {
+				try {
+					notification.addTransmissionAttempt();
+					boolean streamConfirmed = false;
+					try {
+						if (!simulationMode) {
+							this.socket.getOutputStream().write(bytes);
+							streamConfirmed = true;
+						} else {
+							logger.debug("* Simulation only: would have streamed " + bytes.length + "-bytes message now..");
+						}
+					} catch (Exception e) {
+						if (e != null) {
+							if (e.toString().contains("certificate_unknown")) {
+								throw new InvalidCertificateChainException(e.getMessage());
+							}
+						}
+						throw e;
+					}
+					logger.debug("Flushing");
+					this.socket.getOutputStream().flush();
+					if (streamConfirmed) logger.debug("At this point, the entire " + bytes.length + "-bytes message has been streamed out successfully through the SSL connection");
+
+					logger.debug("Notification sent on " + notification.getLatestTransmissionAttempt());
+					notification.setTransmissionCompleted(true);
+					success = true;
+				} catch (IOException e) {
+					// throw exception if we surpassed the valid number of retry attempts
+					if (notification.getTransmissionAttempts() >= retryAttempts) {
+						logger.error("Attempt to send Notification failed and beyond the maximum number of attempts permitted");
+						notification.setTransmissionCompleted(false);
+						notification.setException(e);
+						logger.error("Delivery error", e);
+						throw e;
+					} else {
+						restartSocket();
+					}
+				}
+			}
+		} catch (CommunicationException e) {
+			notification.setException(e);
+			throw e;
+		} catch (Exception ex) {
+			notification.setException(ex);
+			logger.error("Delivery error: " + ex);
+		}
 	}
 
 

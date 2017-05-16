@@ -536,12 +536,12 @@ public class PushNotificationManager {
 							// has to be resend (after the error package)
 							if (invalidTokens.contains(noti.getDevice().getToken())) {
 								// skip if device token is already blacklisted
-								pushedNotifications.remove(noti.getIdentifier());
+								it.remove();
 								continue;
 							}
 							//sanity check, incase we get a response on a later entry when we already have a response on an earlier one.
 							if (noti.getResponse() != null && noti.getResponse().getStatus() == 8) {
-								pushedNotifications.remove(noti.getIdentifier());
+								it.remove();
 								continue;
 							}
 							try {

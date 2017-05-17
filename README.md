@@ -1,3 +1,9 @@
+DEPRECATED
+==========
+This library uses the <a href="https://developer.apple.com/library/content/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/BinaryProviderAPI.html">legacy Apple API</a>. Please, consider moving to a more efficient HTTP-2/based API, by using another library (e.g. https://github.com/CleverTap/apns-http2). 
+
+I will stop mantaining this library, thanks everyone for your contributions.
+
 javapns-jdk16
 =============
 

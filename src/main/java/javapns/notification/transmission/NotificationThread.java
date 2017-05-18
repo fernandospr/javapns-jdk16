@@ -251,10 +251,22 @@ public class NotificationThread implements Runnable, PushQueue {
 	}
 
 
+	public Vector<String> getInvalidTokens() {
+		if (notificationManager != null) {
+			return notificationManager.getInvalidTokens();
+		}
+		return new Vector<String>();
+	}
+
 	private void runQueue() {
 		if (listener != null) listener.eventThreadStarted(this);
 		try {
+			if (sleepBetweenNotifications < 100) {
+				this.setSleepBetweenNotifications(100);
+			}
+			notificationManager.setSslSocketTimeout(0);
 			notificationManager.initializeConnection(server);
+			notificationManager.monitorResponseFromSocket();
 			int notificationsPushed = 0;
 			while (mode == MODE.QUEUE) {
 				while (!messages.isEmpty()) {
@@ -263,7 +275,7 @@ public class NotificationThread implements Runnable, PushQueue {
 					messages.remove(message);
 					notificationsPushed++;
 					int messageId = newMessageIdentifier();
-					PushedNotification notification = notificationManager.sendNotification(message.getDevice(), message.getPayload(), false, messageId);
+					PushedNotification notification = notificationManager.sendNotificationThroughQueue(message.getDevice(), message.getPayload(), messageId);
 					notifications.add(notification);
 					try {
 						if (sleepBetweenNotifications > 0) Thread.sleep(sleepBetweenNotifications);
@@ -275,8 +287,9 @@ public class NotificationThread implements Runnable, PushQueue {
 					}
 					busy = false;
 				}
+				notificationManager.flushErrors();
 				try {
-					Thread.sleep(10 * 1000);
+					Thread.sleep(500);
 				} catch (Exception e) {
 				}
 			}
@@ -288,6 +301,7 @@ public class NotificationThread implements Runnable, PushQueue {
 			this.exception = e;
 			if (listener != null) listener.eventCriticalException(this, e);
 		}
+		notificationManager.stopMonitoringResponse();
 		if (listener != null) listener.eventThreadFinished(this);
 		/* Also notify the parent NotificationThreads, so that it can determine when all threads have finished working */
 		if (this.thread.getThreadGroup() instanceof NotificationThreads) ((NotificationThreads) this.thread.getThreadGroup()).threadFinished(this);
